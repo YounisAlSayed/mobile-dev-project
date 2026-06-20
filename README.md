@@ -12,6 +12,8 @@ An Android Studio Java e-commerce prototype whose main activity uses the officia
 - Persisted favorites: favorite product IDs survive pack reloads and app restarts through `SharedPreferences`.
 - View recycling: `ProductAdapter` and `ProductViewHolder` use the standard RecyclerView contract; `onViewRecycled` clears obsolete Glide targets.
 - User-selectable packs: 10, 25, 50, or 100 products.
+- Rolling adapter window: at most 150 `Product` objects are retained; when a new pack exceeds the cap, complete oldest packs equal to the selected pack size are removed from the front.
+- Visible memory status: the header reports the retained source range and current adapter-object count.
 - Full reload: changing pack size or pressing the header reload button clears rows, cancels obsolete work, returns to page one, and requests a fresh pack.
 
 ## Data and pricing
@@ -24,3 +26,5 @@ Products are derived from Open Library works using `https://openlibrary.org/sear
 2. Sync Gradle and select an internet-connected emulator/device.
 3. Run the `app` configuration.
 4. Scroll to recycle cards and load another pack, change **Items per pack**, tap hearts, or use the header reload icon.
+
+The rolling window is forward-only by design: products discarded from the front no longer remain in the adapter. Use reload to return to page one.

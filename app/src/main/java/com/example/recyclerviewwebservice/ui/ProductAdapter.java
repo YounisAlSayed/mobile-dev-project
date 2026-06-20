@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.recyclerviewwebservice.R;
 import com.example.recyclerviewwebservice.model.Product;
+import com.example.recyclerviewwebservice.model.ProductWindowPolicy;
 import com.example.recyclerviewwebservice.storage.FavoriteStore;
 
 import java.text.NumberFormat;
@@ -127,13 +128,29 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         return products.size();
     }
 
-    public void addProducts(List<Product> newProducts) {
+    /**
+     * Appends a source pack and removes complete oldest packs when the 150-item window is exceeded.
+     *
+     * @return number of products removed from the front
+     */
+    public int addProducts(List<Product> newProducts, int packSize) {
         int insertionStart = products.size();
+        int removalCount = ProductWindowPolicy.calculateRemovalCount(
+                products.size(),
+                newProducts.size(),
+                packSize
+        );
         for (Product product : newProducts) {
             product.setFavorite(favoriteStore.isFavorite(product.getId()));
         }
         products.addAll(newProducts);
         notifyItemRangeInserted(insertionStart, newProducts.size());
+
+        if (removalCount > 0) {
+            products.subList(0, removalCount).clear();
+            notifyItemRangeRemoved(0, removalCount);
+        }
+        return removalCount;
     }
 
     public void clear() {

@@ -37,11 +37,14 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar initialProgress;
     private ProgressBar loadMoreProgress;
     private RecyclerView recyclerView;
+    private LinearLayoutManager layoutManager;
 
     private int pageSize;
     private int nextPage = 1;
     private int requestGeneration;
     private long totalAvailable;
+    private long itemsVisited;
+    private long windowStartIndex;
     private boolean loading;
     private boolean reachedEnd;
     private boolean userScrollActive;
@@ -59,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
         Spinner pageSizeSpinner = findViewById(R.id.pageSizeSpinner);
 
         adapter = new ProductAdapter(new FavoriteStore(this));
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
         recyclerView.setHasFixedSize(false);
@@ -160,6 +163,8 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.scrollToPosition(0);
         nextPage = 1;
         totalAvailable = 0L;
+        itemsVisited = 0L;
+        windowStartIndex = 0L;
         reachedEnd = false;
         loading = false;
         userScrollActive = false;
@@ -213,11 +218,28 @@ public class MainActivity extends AppCompatActivity {
                 initialProgress.setVisibility(View.GONE);
                 loadMoreProgress.setVisibility(View.GONE);
                 totalAvailable = sourceTotal;
-                adapter.addProducts(products);
+
+                int firstVisiblePosition = layoutManager.findFirstVisibleItemPosition();
+                View firstVisibleView = layoutManager.findViewByPosition(firstVisiblePosition);
+                int firstVisibleOffset = firstVisibleView == null
+                        ? 0
+                        : firstVisibleView.getTop() - recyclerView.getPaddingTop();
+
+                int removedFromFront = adapter.addProducts(products, requestedPageSize);
+                itemsVisited += products.size();
+                windowStartIndex += removedFromFront;
+
+                if (removedFromFront > 0
+                        && firstVisiblePosition != RecyclerView.NO_POSITION) {
+                    layoutManager.scrollToPositionWithOffset(
+                            Math.max(0, firstVisiblePosition - removedFromFront),
+                            firstVisibleOffset
+                    );
+                }
 
                 reachedEnd = products.size() < requestedPageSize
                         || products.isEmpty()
-                        || (totalAvailable > 0 && adapter.getItemCount() >= totalAvailable);
+                        || (totalAvailable > 0 && itemsVisited >= totalAvailable);
                 if (!reachedEnd) {
                     nextPage = requestedPage + 1;
                 }
@@ -253,6 +275,7 @@ public class MainActivity extends AppCompatActivity {
         if (reachedEnd) {
             statusText.setText(getString(
                     R.string.all_products_loaded,
+                    NumberFormat.getIntegerInstance().format(itemsVisited),
                     adapter.getItemCount(),
                     pageSize
             ));
@@ -264,8 +287,12 @@ public class MainActivity extends AppCompatActivity {
                 : getString(R.string.unknown_total);
         statusText.setText(getString(
                 R.string.products_loaded,
-                adapter.getItemCount(),
+                NumberFormat.getIntegerInstance().format(windowStartIndex + 1L),
+                NumberFormat.getIntegerInstance().format(
+                        windowStartIndex + adapter.getItemCount()
+                ),
                 formattedTotal,
+                adapter.getItemCount(),
                 pageSize
         ));
     }
