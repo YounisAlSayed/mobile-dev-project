@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RecyclerShop Product Feed</string>
+    <string name="screen_title">Book Shop</string>
+    <string name="screen_subtitle">10,000+ products • recycled cards • Glide image cache</string>
+    <string name="loading">Loading products…</string>
+    <string name="loading_more">Loading more products</string>
+    <string name="loading_pack">Loading pack %1$d • %2$d products…</string>
+    <string name="waiting_for_network">Waiting for network • retry %1$d of %2$d in %3$d s</string>
+    <string name="retry">Retry</string>
+    <string name="reload_products">Reload products from page one</string>
+    <string name="items_per_pack">Items per pack</string>
+    <string name="no_products">The source returned no products.</string>
+    <string name="products_loaded">%1$d of %2$s products • %3$d per pack</string>
+    <string name="all_products_loaded">All %1$d products displayed • %2$d per pack</string>
+    <string name="unknown_total">many</string>
+    <string name="load_error">Could not load products: %1$s</string>
+    <string name="product_cover">Product cover image</string>
+    <string name="favorite">Favorite</string>
+    <string name="add_to_favorites">Add %1$s to favorites</string>
+    <string name="remove_from_favorites">Remove %1$s from favorites</string>
+
+    <string-array name="page_size_options">
+        <item>10</item>
+        <item>25</item>
+        <item>50</item>
+        <item>100</item>
+    </string-array>
+</resources>
