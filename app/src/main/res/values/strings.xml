@@ -2,7 +2,6 @@
 <resources>
     <string name="app_name">RecyclerShop Product Feed</string>
     <string name="screen_title">Book Shop</string>
-    <string name="screen_subtitle">10,000+ products • 150-item data window • Glide cache</string>
     <string name="loading">Loading products…</string>
     <string name="loading_more">Loading more products</string>
     <string name="loading_pack">Loading pack %1$d • %2$d products…</string>
@@ -11,7 +10,7 @@
     <string name="reload_products">Reload products from page one</string>
     <string name="items_per_pack">Items per pack</string>
     <string name="no_products">The source returned no products.</string>
-    <string name="products_loaded">Showing %1$s–%2$s of %3$s • %4$d in memory • %5$d/pack</string>
+    <string name="products_loaded_range">Showing %1$d - %2$d</string>
     <string name="all_products_loaded">End reached • %1$s viewed • %2$d in memory • %3$d/pack</string>
     <string name="unknown_total">many</string>
     <string name="load_error">Could not load products: %1$s</string>

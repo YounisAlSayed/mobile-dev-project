@@ -6,8 +6,6 @@ import android.content.SharedPreferences;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-/** Persists favorite product IDs across reloads and app restarts. */
 public class FavoriteStore {
     private static final String PREFERENCES_NAME = "product_favorites";
     private static final String FAVORITE_IDS_KEY = "favorite_ids";

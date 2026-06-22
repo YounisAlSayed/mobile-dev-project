@@ -128,29 +128,48 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         return products.size();
     }
 
-    /**
-     * Appends a source pack and removes complete oldest packs when the 150-item window is exceeded.
-     *
-     * @return number of products removed from the front
-     */
-    public int addProducts(List<Product> newProducts, int packSize) {
-        int insertionStart = products.size();
-        int removalCount = ProductWindowPolicy.calculateRemovalCount(
+    /** Appends newer products and removes only the exact overflow from the front. */
+    public int appendProducts(List<Product> newProducts) {
+        int removalCount = ProductWindowPolicy.calculateOverflowCount(
                 products.size(),
-                newProducts.size(),
-                packSize
+                newProducts.size()
         );
-        for (Product product : newProducts) {
-            product.setFavorite(favoriteStore.isFavorite(product.getId()));
-        }
-        products.addAll(newProducts);
-        notifyItemRangeInserted(insertionStart, newProducts.size());
+        restoreFavoriteState(newProducts);
 
         if (removalCount > 0) {
             products.subList(0, removalCount).clear();
             notifyItemRangeRemoved(0, removalCount);
         }
+
+        int insertionStart = products.size();
+        products.addAll(newProducts);
+        notifyItemRangeInserted(insertionStart, newProducts.size());
         return removalCount;
+    }
+
+    /** Prepends older products and removes only the exact overflow from the end. */
+    public int prependProducts(List<Product> newProducts) {
+        int removalCount = ProductWindowPolicy.calculateOverflowCount(
+                products.size(),
+                newProducts.size()
+        );
+        restoreFavoriteState(newProducts);
+
+        if (removalCount > 0) {
+            int removalStart = products.size() - removalCount;
+            products.subList(removalStart, products.size()).clear();
+            notifyItemRangeRemoved(removalStart, removalCount);
+        }
+
+        products.addAll(0, newProducts);
+        notifyItemRangeInserted(0, newProducts.size());
+        return removalCount;
+    }
+
+    private void restoreFavoriteState(List<Product> newProducts) {
+        for (Product product : newProducts) {
+            product.setFavorite(favoriteStore.isFavorite(product.getId()));
+        }
     }
 
     public void clear() {

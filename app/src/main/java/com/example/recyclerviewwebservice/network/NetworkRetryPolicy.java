@@ -5,10 +5,6 @@ import java.net.NoRouteToHostException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-
-/**
- * Bounded exponential-backoff policy for temporary connectivity failures.
- */
 public final class NetworkRetryPolicy {
     public static final int MAX_ATTEMPTS = 5;
     private static final long INITIAL_DELAY_MILLIS = 1_000L;
@@ -32,9 +28,6 @@ public final class NetworkRetryPolicy {
         return false;
     }
 
-    /**
-     * @param failedAttempt one-based number of the request that just failed
-     */
     public static long delayAfterAttempt(int failedAttempt) {
         int safeAttempt = Math.max(1, failedAttempt);
         int shift = Math.min(safeAttempt - 1, 3);

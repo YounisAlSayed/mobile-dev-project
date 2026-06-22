@@ -18,7 +18,7 @@ import com.example.recyclerviewwebservice.network.OpenLibraryProductApi;
 import com.example.recyclerviewwebservice.storage.FavoriteStore;
 import com.example.recyclerviewwebservice.ui.ProductAdapter;
 
-import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,9 +29,13 @@ public class MainActivity extends AppCompatActivity {
     private static final int LOAD_MORE_THRESHOLD = 5;
     private static final String PAGE_SIZE_PREFERENCE = "page_size";
 
+    private enum LoadDirection {
+        FORWARD,
+        BACKWARD
+    }
+
     private final OpenLibraryProductApi api = new OpenLibraryProductApi();
     private ProductAdapter adapter;
-
     private TextView statusText;
     private Button retryButton;
     private ProgressBar initialProgress;
@@ -40,14 +44,13 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayoutManager layoutManager;
 
     private int pageSize;
-    private int nextPage = 1;
     private int requestGeneration;
     private long totalAvailable;
-    private long itemsVisited;
     private long windowStartIndex;
     private boolean loading;
     private boolean reachedEnd;
     private boolean userScrollActive;
+    private LoadDirection lastLoadDirection = LoadDirection.FORWARD;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,12 +90,19 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onScrolled(RecyclerView view, int dx, int dy) {
                 super.onScrolled(view, dx, dy);
-                if (!userScrollActive || dy <= 0 || loading || reachedEnd) {
+                if (!userScrollActive || loading) {
                     return;
                 }
 
+                int firstVisible = layoutManager.findFirstVisibleItemPosition();
                 int lastVisible = layoutManager.findLastVisibleItemPosition();
-                if (lastVisible >= adapter.getItemCount() - LOAD_MORE_THRESHOLD) {
+                if (dy < 0
+                        && windowStartIndex > 0
+                        && firstVisible <= LOAD_MORE_THRESHOLD) {
+                    loadPreviousPage();
+                } else if (dy > 0
+                        && !reachedEnd
+                        && lastVisible >= adapter.getItemCount() - LOAD_MORE_THRESHOLD) {
                     loadNextPage();
                 }
             }
@@ -104,6 +114,8 @@ public class MainActivity extends AppCompatActivity {
             retryButton.setVisibility(View.GONE);
             if (adapter.getItemCount() == 0) {
                 resetAndLoad();
+            } else if (lastLoadDirection == LoadDirection.BACKWARD) {
+                loadPreviousPage();
             } else {
                 loadNextPage();
             }
@@ -161,15 +173,14 @@ public class MainActivity extends AppCompatActivity {
         requestGeneration++;
         adapter.clear();
         recyclerView.scrollToPosition(0);
-        nextPage = 1;
         totalAvailable = 0L;
-        itemsVisited = 0L;
         windowStartIndex = 0L;
         reachedEnd = false;
         loading = false;
         userScrollActive = false;
         retryButton.setVisibility(View.GONE);
         loadMoreProgress.setVisibility(View.GONE);
+        statusText.setText(R.string.loading);
         loadNextPage();
     }
 
@@ -178,9 +189,35 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        loadPage(LoadDirection.FORWARD);
+    }
+
+    private void loadPreviousPage() {
+        if (loading || windowStartIndex <= 0) {
+            return;
+        }
+
+        loadPage(LoadDirection.BACKWARD);
+    }
+
+    private void loadPage(LoadDirection direction) {
+        long requestWindowStart = windowStartIndex;
+        long requestWindowEnd = requestWindowStart + adapter.getItemCount();
+        long targetIndex = direction == LoadDirection.FORWARD
+                ? requestWindowEnd
+                : requestWindowStart - 1L;
+        if (targetIndex < 0) {
+            return;
+        }
+
+        int requestedPageSize = pageSize;
+        int requestedPage = (int) (targetIndex / requestedPageSize) + 1;
+        long pageStartIndex = (requestedPage - 1L) * requestedPageSize;
+
         loading = true;
+        lastLoadDirection = direction;
         retryButton.setVisibility(View.GONE);
-        statusText.setText(getString(R.string.loading_pack, nextPage, pageSize));
+        statusText.setText(R.string.loading);
 
         if (adapter.getItemCount() == 0) {
             initialProgress.setVisibility(View.VISIBLE);
@@ -189,8 +226,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         final int generation = requestGeneration;
-        final int requestedPage = nextPage;
-        final int requestedPageSize = pageSize;
 
         api.fetchProducts(requestedPage, requestedPageSize, new OpenLibraryProductApi.Callback() {
             @Override
@@ -198,14 +233,6 @@ public class MainActivity extends AppCompatActivity {
                 if (!isCurrentRequest(generation)) {
                     return;
                 }
-
-                long delaySeconds = Math.max(1L, delayMillis / 1_000L);
-                statusText.setText(getString(
-                        R.string.waiting_for_network,
-                        nextAttempt,
-                        maximumAttempts,
-                        delaySeconds
-                ));
             }
 
             @Override
@@ -214,7 +241,6 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-                loading = false;
                 initialProgress.setVisibility(View.GONE);
                 loadMoreProgress.setVisibility(View.GONE);
                 totalAvailable = sourceTotal;
@@ -225,25 +251,54 @@ public class MainActivity extends AppCompatActivity {
                         ? 0
                         : firstVisibleView.getTop() - recyclerView.getPaddingTop();
 
-                int removedFromFront = adapter.addProducts(products, requestedPageSize);
-                itemsVisited += products.size();
-                windowStartIndex += removedFromFront;
-
-                if (removedFromFront > 0
-                        && firstVisiblePosition != RecyclerView.NO_POSITION) {
-                    layoutManager.scrollToPositionWithOffset(
-                            Math.max(0, firstVisiblePosition - removedFromFront),
-                            firstVisibleOffset
+                if (direction == LoadDirection.FORWARD) {
+                    int fromIndex = (int) Math.max(
+                            0L,
+                            Math.min((long) products.size(), requestWindowEnd - pageStartIndex)
                     );
+                    List<Product> missingProducts = new ArrayList<>(
+                            products.subList(fromIndex, products.size())
+                    );
+                    int removedFromFront = adapter.appendProducts(missingProducts);
+                    windowStartIndex = requestWindowStart + removedFromFront;
+
+                    if (removedFromFront > 0
+                            && firstVisiblePosition != RecyclerView.NO_POSITION) {
+                        layoutManager.scrollToPositionWithOffset(
+                                Math.max(0, firstVisiblePosition - removedFromFront),
+                                firstVisibleOffset
+                        );
+                    }
+                } else {
+                    int toIndex = (int) Math.max(
+                            0L,
+                            Math.min((long) products.size(), requestWindowStart - pageStartIndex)
+                    );
+                    List<Product> missingProducts = new ArrayList<>(
+                            products.subList(0, toIndex)
+                    );
+                    adapter.prependProducts(missingProducts);
+                    windowStartIndex = Math.max(
+                            0L,
+                            requestWindowStart - missingProducts.size()
+                    );
+
+                    if (!missingProducts.isEmpty()
+                            && firstVisiblePosition != RecyclerView.NO_POSITION) {
+                        layoutManager.scrollToPositionWithOffset(
+                                firstVisiblePosition + missingProducts.size(),
+                                firstVisibleOffset
+                        );
+                    }
                 }
 
-                reachedEnd = products.size() < requestedPageSize
-                        || products.isEmpty()
-                        || (totalAvailable > 0 && itemsVisited >= totalAvailable);
-                if (!reachedEnd) {
-                    nextPage = requestedPage + 1;
-                }
+                long retainedEnd = windowStartIndex + adapter.getItemCount();
+                reachedEnd = totalAvailable > 0
+                        ? retainedEnd >= totalAvailable
+                        : direction == LoadDirection.FORWARD
+                        && products.size() < requestedPageSize;
 
+                loading = false;
                 updateLoadedStatus();
             }
 
@@ -256,7 +311,6 @@ public class MainActivity extends AppCompatActivity {
                 loading = false;
                 initialProgress.setVisibility(View.GONE);
                 loadMoreProgress.setVisibility(View.GONE);
-                statusText.setText(getString(R.string.load_error, message));
                 retryButton.setVisibility(View.VISIBLE);
             }
         });
@@ -268,32 +322,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateLoadedStatus() {
         if (adapter.getItemCount() == 0) {
-            statusText.setText(R.string.no_products);
             return;
         }
 
-        if (reachedEnd) {
-            statusText.setText(getString(
-                    R.string.all_products_loaded,
-                    NumberFormat.getIntegerInstance().format(itemsVisited),
-                    adapter.getItemCount(),
-                    pageSize
-            ));
-            return;
-        }
-
-        String formattedTotal = totalAvailable > 0
-                ? NumberFormat.getIntegerInstance().format(totalAvailable)
-                : getString(R.string.unknown_total);
         statusText.setText(getString(
-                R.string.products_loaded,
-                NumberFormat.getIntegerInstance().format(windowStartIndex + 1L),
-                NumberFormat.getIntegerInstance().format(
-                        windowStartIndex + adapter.getItemCount()
-                ),
-                formattedTotal,
-                adapter.getItemCount(),
-                pageSize
+                R.string.products_loaded_range,
+                windowStartIndex,
+                windowStartIndex + adapter.getItemCount()
         ));
     }
 

@@ -41,15 +41,6 @@
                 android:src="@drawable/ic_reload"
                 android:tint="@android:color/white" />
         </LinearLayout>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:paddingEnd="8dp"
-            android:text="@string/screen_subtitle"
-            android:textColor="@color/header_secondary"
-            android:textSize="14sp" />
     </LinearLayout>
 
     <LinearLayout
@@ -74,8 +65,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/loading"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/retryButton"

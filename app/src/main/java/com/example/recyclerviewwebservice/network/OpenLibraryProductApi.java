@@ -24,7 +24,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-/** Converts Open Library's large fiction catalog into an e-commerce product feed. */
 public class OpenLibraryProductApi {
     public static final String BASE_URL = "https://openlibrary.org/search.json";
     public static final String SEARCH_QUERY = "subject:fiction";
