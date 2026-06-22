@@ -1,6 +1,5 @@
 package com.example.recyclerviewwebservice.model;
 
-/** Produces a stable prototype price because Open Library is a catalog, not a store. */
 public final class DemoPriceCalculator {
     private static final int MIN_PRICE_CENTS = 799;
     private static final int PRICE_RANGE_CENTS = 7_201;

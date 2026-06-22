@@ -2,7 +2,6 @@ package com.example.recyclerviewwebservice.model;
 
 import java.util.Objects;
 
-/** One e-commerce product derived from an Open Library work. */
 public class Product {
     private final String id;
     private final String title;
@@ -67,7 +66,6 @@ public class Product {
         this.favorite = favorite;
     }
 
-    /** Creates a deterministic 64-bit RecyclerView ID from the source work ID. */
     public long getStableId() {
         long hash = 0xcbf29ce484222325L;
         for (int index = 0; index < id.length(); index++) {

@@ -43,7 +43,6 @@ public class OpenLibraryProductApi {
         void onError(String message);
 
         default void onRetry(int nextAttempt, int maximumAttempts, long delayMillis) {
-            // Optional UI progress callback.
         }
     }
 

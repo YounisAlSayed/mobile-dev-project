@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Binds complex e-commerce cards to the official AndroidX RecyclerView. */
 public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductViewHolder> {
     private static final String PAYLOAD_FAVORITE = "favorite";
 
@@ -128,7 +127,6 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         return products.size();
     }
 
-    /** Appends newer products and removes only the exact overflow from the front. */
     public int appendProducts(List<Product> newProducts) {
         int removalCount = ProductWindowPolicy.calculateOverflowCount(
                 products.size(),
@@ -147,7 +145,6 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         return removalCount;
     }
 
-    /** Prepends older products and removes only the exact overflow from the end. */
     public int prependProducts(List<Product> newProducts) {
         int removalCount = ProductWindowPolicy.calculateOverflowCount(
                 products.size(),

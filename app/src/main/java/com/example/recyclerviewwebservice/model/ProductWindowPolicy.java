@@ -1,6 +1,5 @@
 package com.example.recyclerviewwebservice.model;
 
-/** Keeps the adapter's product-object window bounded to an exact capacity. */
 public final class ProductWindowPolicy {
     public static final int MAX_ITEMS_IN_MEMORY = 150;
 

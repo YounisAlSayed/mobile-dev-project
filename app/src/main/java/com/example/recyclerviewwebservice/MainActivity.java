@@ -21,9 +21,6 @@ import com.example.recyclerviewwebservice.ui.ProductAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Main screen for a recycled e-commerce product feed backed by Open Library.
- */
 public class MainActivity extends AppCompatActivity {
     private static final int DEFAULT_PAGE_SIZE = 25;
     private static final int LOAD_MORE_THRESHOLD = 5;
@@ -163,12 +160,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                // Keep the existing pack size.
             }
         });
     }
 
-    /** Clears every row and paging value before requesting a new first pack. */
     private void resetAndLoad() {
         requestGeneration++;
         adapter.clear();
@@ -228,13 +223,6 @@ public class MainActivity extends AppCompatActivity {
         final int generation = requestGeneration;
 
         api.fetchProducts(requestedPage, requestedPageSize, new OpenLibraryProductApi.Callback() {
-            @Override
-            public void onRetry(int nextAttempt, int maximumAttempts, long delayMillis) {
-                if (!isCurrentRequest(generation)) {
-                    return;
-                }
-            }
-
             @Override
             public void onSuccess(List<Product> products, long sourceTotal) {
                 if (!isCurrentRequest(generation)) {
